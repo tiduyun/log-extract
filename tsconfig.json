@@ -1,0 +1,19 @@
+{
+  "transpileOnly": true,
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "module": "esnext",
+    "target": "esnext",
+    "baseUrl": ".",
+    "outDir": "./dist",
+    "newLine": "lf"
+  },
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules/"
+  ]
+}

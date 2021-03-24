@@ -1,0 +1,29 @@
+{
+  "name": "log-extract",
+  "version": "1.0.0",
+  "description": "daily report generator (based on tower.im)",
+  "main": "./dist/index.js",
+  "scripts": {
+    "test": "rb --compress=false && node ./dist/index.js",
+    "dev": "tsc -t es5 -m commonjs -p . -w",
+    "build": "rb"
+  },
+  "author": "Allex <allex.wxn@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "@tdio/stream": "^1.0.0",
+    "@types/node": "^14.14.37",
+    "cheerio": "^1.0.0-rc.5",
+    "request": "^2.88.2",
+    "turndown": "^7.0.0"
+  },
+  "devDependencies": {
+    "@allex/typescript": "^3.2.1",
+    "end-of-stream": "^1.4.4",
+    "got": "^11.8.2",
+    "rollup-worker": "^1.1.0"
+  },
+  "bin": {
+    "build-reports": "./bin/cli.js"
+  }
+}
