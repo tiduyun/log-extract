@@ -7,6 +7,7 @@ COPY bin/run.sh /app/run.sh
 COPY log-extract-1.0.0.tgz /app/
 
 RUN set -x \
+  && sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories \
 # https://wiki.alpinelinux.org/wiki/Setting_the_timezone
   && apk add --no-cache --virtual .apt-deps tzdata && cp -s /usr/share/zoneinfo/${TZ} /etc/localtime && echo "${TZ}" > /etc/timezone \
     && tar -cf tz.tar /usr/share/zoneinfo/${TZ} && apk del .apt-deps && tar -C / -xf tz.tar && rm -f tz.tar \

@@ -1,38 +1,9 @@
 import { through } from '@tdio/stream'
 import TurndownService from 'turndown'
 import cheerio from 'cheerio'
+import JSON5 from 'json5'
 
 import { cleanupMarkdown } from './markdown-utils'
-
-const rxEscapable = /[\\"\u0000-\u001f\u007f-\u009f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g
-const rxDangerous = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g
-const meta = {    // table of character substitutions
-  '\b': '\\b',
-  '\t': '\\t',
-  '\n': '\\n',
-  '\f': '\\f',
-  '\r': '\\r',
-  '\'': '\\\''
-}
-
-export const escapeBadChars = (s: string): string => {
-  rxEscapable.lastIndex = 0
-  rxDangerous.lastIndex = 0
-  if (rxDangerous.test(s)) {
-    s = s.replace(rxDangerous, function (a) {
-      return (
-        '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4)
-      )
-    })
-  }
-  if (rxEscapable.test(s)) {
-    s = s.replace(rxEscapable, function (a) {
-      var c = meta[a]
-      return typeof c === 'string' ? c : a
-    })
-  }
-  return s
-}
 
 export const sanitize = () => {
   let head = ''
@@ -78,7 +49,7 @@ export const parse = () => {
       cb()
     },
     function (cb) {
-      const html = JSON.parse(`{"html": "${escapeBadChars(raw)}"}`).html
+      const html = JSON5.parse(`{"html": "${raw}"}`).html
       const $ = cheerio.load(html)
       const list = $('.project-kanban-todolist-comments .comment[data-guid]').get()
       const rs = list.map(node => {

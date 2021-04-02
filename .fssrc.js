@@ -23,6 +23,7 @@ const banner = (name, short = false) => {
 const resolve = p => path.resolve(__dirname, '.', p)
 
 const plugins = [
+  'resolve',
   'typescript',
   'babel'
 ]
