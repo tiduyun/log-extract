@@ -6,7 +6,7 @@ import JSON5 from 'json5'
 import { cleanupMarkdown } from './markdown-utils'
 
 export const sanitize = () => {
-  let head = ''
+  let head: Buffer | null = null
   let matching = false
   let finished = false
   return through(
@@ -14,25 +14,24 @@ export const sanitize = () => {
       if (finished) {
         return
       }
-      const s = chunk.toString()
       if (!matching) {
-        // find start
-        head += s
-        const startToken = 'slide.setContent(\''
+        // find start token
+        head = head ? Buffer.concat([head, chunk]) : chunk
+        const startToken = Buffer.from('slide.setContent(\'')
         const pos = head.indexOf(startToken)
         if (pos !== -1) {
-          cb(null, head.substring(pos + startToken.length))
-          head = ''
+          cb(null, head.slice(pos + startToken.length))
+          head = null
           matching = true
         }
       } else {
-        // find ender
-        const pos = s.indexOf('\')')
-        if (pos !== -1 && s.substr(pos - 1, 1) !== '\\') {
-          cb(null, s.substring(0, pos))
+        // find end token
+        const pos = chunk.indexOf('\')')
+        if (pos !== -1 && chunk[pos - 1] !== '\\'.charCodeAt(0)) {
+          cb(null, chunk.slice(0, pos))
           finished = true
         } else {
-          cb(null, s)
+          cb(null, chunk)
         }
       }
     }
@@ -42,14 +41,14 @@ export const sanitize = () => {
 const turndownService = new TurndownService({ headingStyle: 'atx' })
 
 export const parse = () => {
-  let raw = ''
+  let raw: Buffer = Buffer.of()
   return through(
     function (chunk, enc, cb) {
-      raw += chunk
+      raw = Buffer.concat([raw, chunk])
       cb()
     },
     function (cb) {
-      const html = JSON5.parse(`{"html": "${raw}"}`).html
+      const html = JSON5.parse(`{"html": "${raw.toString()}"}`).html
       const $ = cheerio.load(html)
       const list = $('.project-kanban-todolist-comments .comment[data-guid]').get()
       const rs = list.map(node => {
@@ -71,6 +70,6 @@ export const parse = () => {
       })
       cb(null, rs)
     },
-    { objectMode: true }
+    { readableObjectMode: true }
   )
 }
