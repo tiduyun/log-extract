@@ -15,6 +15,7 @@
     "@tdio/stream": "^1.0.0",
     "@types/node": "^14.14.37",
     "cheerio": "^1.0.0-rc.5",
+    "json5": "^2.2.0",
     "request": "^2.88.2",
     "turndown": "^7.0.0"
   },
@@ -22,7 +23,6 @@
     "@allex/typescript": "^3.2.1",
     "end-of-stream": "^1.4.4",
     "got": "^11.8.2",
-    "json5": "^2.2.0",
     "rollup-worker": "^1.1.0"
   },
   "bin": {

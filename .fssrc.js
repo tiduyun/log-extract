@@ -24,8 +24,7 @@ const resolve = p => path.resolve(__dirname, '.', p)
 
 const plugins = [
   'resolve',
-  'typescript',
-  'babel'
+  'typescript'
 ]
 
 export default {
@@ -46,6 +45,13 @@ export default {
       plugins,
       output: [
         { format: 'cjs', file: 'index.js', banner: banner(name) }
+      ]
+    },
+    {
+      input: resolve('get-weekly.ts'),
+      plugins,
+      output: [
+        { format: 'cjs', file: 'get-weekly.js', banner: banner(name) }
       ]
     }
   ]

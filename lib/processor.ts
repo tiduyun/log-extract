@@ -1,7 +1,7 @@
 import { through } from '@tdio/stream'
 import TurndownService from 'turndown'
 import cheerio from 'cheerio'
-import JSON5 from 'json5'
+import { parseJSON } from './utils'
 
 import { cleanupMarkdown } from './markdown-utils'
 
@@ -48,7 +48,7 @@ export const parse = () => {
       cb()
     },
     function (cb) {
-      const html = JSON5.parse(`{"html": "${raw.toString()}"}`).html
+      const html = parseJSON(`{"html": "${raw.toString()}"}`).html
       const $ = cheerio.load(html)
       const list = $('.project-kanban-todolist-comments .comment[data-guid]').get()
       const rs = list.map(node => {

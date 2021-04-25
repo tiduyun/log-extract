@@ -9,6 +9,7 @@ import fs from 'fs'
 import request from 'request'
 import { Transform } from 'stream'
 import { GenericCallback, Kv } from 'types/common'
+import JSON5 from 'json5'
 
 type CallbackTask = (cb: GenericCallback) => void
 
@@ -50,7 +51,6 @@ export const fetch = (url: string, params: { headers?: Kv; cookie?: string; jar?
   return request(opts)
 }
 
-
 const existSync = (t: string): boolean => {
   try {
     fs.accessSync(t)
@@ -68,3 +68,5 @@ export const loadConfig = <T> (file: string = 'config.json'): T => {
   const json = fs.readFileSync(file, 'utf8')
   return JSON.parse(json) as T
 }
+
+export const parseJSON = (s: string) => JSON5.parse(s)
