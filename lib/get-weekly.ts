@@ -1,8 +1,8 @@
 import { Readable, ReadableOptions } from 'stream'
 import cheerio from 'cheerio'
 import { through } from '@tdio/stream'
-import { fetch, runSeries, loadConfig, parseJSON } from './lib/utils'
-import { cos } from './lib/printer'
+import { fetch, runSeries, loadConfig, parseJSON } from './utils'
+import { cos } from './printer'
 
 const api = 'https://tower.im/teams/66f9f25eee0a44d18282ffdcd0b33e1f/reports/?date=2021-04-16&subgroup_guid=b6c3e3fc950e59ba68987dbe04492b12&conn_guid=0aa6dee6-3ec0-455f-be3c-e367b96e2b3f'
 const cookie = 'wechat_login_remember_me=true; intercom-id-xbtsuf77=54e3394a-ee1d-40cb-bf4d-009e419f92a5; remember_token=80137323-603b-446e-b564-c11170cb4b75; remember_sns_bind_token=YZitBAdKvWiKMEmxrJSxPUUQ; remember_team_guid=66f9f25eee0a44d18282ffdcd0b33e1f; uid=rBACK2B/gd2s2GWdQeAhAg==; AGL_USER_ID=e5d3f4ba-1752-4ea1-8ae8-044550c6eb0b; _tower2_session=a5cfd52f7461b08ffa1ff4fd4073e383; intercom-session-xbtsuf77=UDVYcHZrOTNQRS9TZy8yTlF2VVo4NVdHNTljbFJPdDVZMlhZbU1VTW5rRGl4cEx4dFE5NE5sUElnOTZVdllTeS0tc2RvSlNPaktxWk0vODN2VEtQYjdYdz09--ec4bc96c3cad84a2d7e2ac0e0d3a1a06d0e21643'

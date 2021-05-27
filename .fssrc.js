@@ -23,12 +23,11 @@ const banner = (name, short = false) => {
 const resolve = p => path.resolve(__dirname, '.', p)
 
 const plugins = [
-  'resolve',
   'typescript'
 ]
 
 export default {
-  destDir: resolve('dist'),
+  destDir: './dist',
   dependencies: {
     ...dependencies
   },
@@ -41,18 +40,25 @@ export default {
   },
   entry: [
     {
-      input: resolve('index.ts'),
+      input: resolve('lib/index.ts'),
       plugins,
       output: [
-        { format: 'cjs', file: 'index.js', banner: banner(name) }
+        { file: 'index.js', format: 'cjs', banner: banner(name) }
       ]
     },
     {
-      input: resolve('get-weekly.ts'),
+      input: resolve('lib/cli.ts'),
       plugins,
       output: [
-        { format: 'cjs', file: 'get-weekly.js', banner: banner(name) }
+        { file: 'cli.js', format: 'cjs', banner: banner(name) }
       ]
-    }
+    },
+    {
+      input: resolve('lib/get-weekly.ts'),
+      plugins,
+      output: [
+        { file: 'get-weekly.js', format: 'cjs', banner: banner(name) }
+      ]
+    },
   ]
 }

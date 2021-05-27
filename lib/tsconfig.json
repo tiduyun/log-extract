@@ -5,12 +5,14 @@
     "moduleResolution": "node",
     "module": "esnext",
     "target": "es6",
-    "baseUrl": ".",
-    "outDir": "./dist",
-    "newLine": "lf"
+    "baseUrl": "./",
+    "outDir": "../dist",
+    "newLine": "lf",
+    "declaration": true
   },
   "include": [
-    "**/*.ts"
+    "**/*.ts",
+    "types/**/*.ts"
   ],
   "exclude": [
     "dist",
