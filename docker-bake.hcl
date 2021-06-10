@@ -13,8 +13,8 @@ variable "PREFIX" {
   default = "tdio"
 }
 
-variable "BUILD_TAG" {
-  default = "1.0.1"
+variable "BUILD_VERSION" {
+  default = "1.0.0"
 }
 
 group "default" {
@@ -25,11 +25,11 @@ target "mainline" {
   context = "."
   dockerfile = "Dockerfile"
   args = {
-    BUILD_TAG = ""
+    BUILD_VERSION = ""
     BUILD_GIT_HEAD = ""
   }
   tags = [
-    "${image_name(PREFIX, NAME)}:${BUILD_TAG}",
+    "${image_name(PREFIX, NAME)}:${BUILD_VERSION}",
     "${image_name(PREFIX, NAME)}:latest"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
