@@ -9,6 +9,16 @@ export const sanitize = () => {
   let head: Buffer | null = null
   let matching = false
   let finished = false
+
+  const findEOF = (chunk: Buffer): number => {
+    // find end token
+    const pos = chunk.indexOf('\')')
+    if (pos !== -1 && chunk[pos - 1] !== '\\'.charCodeAt(0)) {
+      return pos
+    }
+    return -1
+  }
+
   return through(
     function (chunk, enc, cb) {
       if (finished) {
@@ -20,15 +30,21 @@ export const sanitize = () => {
         const startToken = Buffer.from('slide.setContent(\'')
         const pos = head.indexOf(startToken)
         if (pos !== -1) {
-          cb(null, head.slice(pos + startToken.length))
-          head = null
           matching = true
+          let s = head.slice(pos + startToken.length)
+          const end = findEOF(s)
+          if (end !== -1) {
+            s = s.slice(0, end)
+            finished = true
+          }
+          cb(null, s)
+          head = null
         }
       } else {
         // find end token
-        const pos = chunk.indexOf('\')')
-        if (pos !== -1 && chunk[pos - 1] !== '\\'.charCodeAt(0)) {
-          cb(null, chunk.slice(0, pos))
+        const end = findEOF(chunk)
+        if (end !== -1) {
+          cb(null, chunk.slice(0, end))
           finished = true
         } else {
           cb(null, chunk)
