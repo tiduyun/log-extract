@@ -14,7 +14,7 @@ variable "PREFIX" {
 }
 
 variable "BUILD_TAG" {
-  default = "1.0.0"
+  default = "1.0.1"
 }
 
 group "default" {

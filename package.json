@@ -1,6 +1,6 @@
 {
   "name": "log-extract",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "daily report generator (based on tower.im)",
   "main": "./dist/index.js",
   "scripts": {
