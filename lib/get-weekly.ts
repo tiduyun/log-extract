@@ -3,9 +3,7 @@ import cheerio from 'cheerio'
 import { through } from '@tdio/stream'
 import { fetch, runSeries, loadConfig, parseJSON } from './utils'
 import { cos } from './printer'
-
-const api = 'https://tower.im/teams/66f9f25eee0a44d18282ffdcd0b33e1f/reports/?date=2021-04-16&subgroup_guid=b6c3e3fc950e59ba68987dbe04492b12&conn_guid=0aa6dee6-3ec0-455f-be3c-e367b96e2b3f'
-const cookie = 'wechat_login_remember_me=true; intercom-id-xbtsuf77=54e3394a-ee1d-40cb-bf4d-009e419f92a5; remember_token=80137323-603b-446e-b564-c11170cb4b75; remember_sns_bind_token=YZitBAdKvWiKMEmxrJSxPUUQ; remember_team_guid=66f9f25eee0a44d18282ffdcd0b33e1f; uid=rBACK2B/gd2s2GWdQeAhAg==; AGL_USER_ID=e5d3f4ba-1752-4ea1-8ae8-044550c6eb0b; _tower2_session=a5cfd52f7461b08ffa1ff4fd4073e383; intercom-session-xbtsuf77=UDVYcHZrOTNQRS9TZy8yTlF2VVo4NVdHNTljbFJPdDVZMlhZbU1VTW5rRGl4cEx4dFE5NE5sUElnOTZVdllTeS0tc2RvSlNPaktxWk0vODN2VEtQYjdYdz09--ec4bc96c3cad84a2d7e2ac0e0d3a1a06d0e21643'
+import * as qs from 'querystring'
 
 interface ReportType {
   id: string;
@@ -21,6 +19,11 @@ interface ReportType {
   }>;
 }
 
+interface ApiSpec {
+  endpoint: string;
+  cookie?: string;
+}
+
 class ReportError extends Error {
   code: number;
   constructor (msg: string, code: number = 0) {
@@ -32,8 +35,11 @@ class ReportError extends Error {
 const HTTP_STATUS_NO_CONTENT = 204
 
 class ReportReader extends Readable {
-  constructor (options?: ReadableOptions) {
+  api: ApiSpec;
+
+  constructor (api: ApiSpec, options?: ReadableOptions) {
     super(options)
+    this.api = api
     this.startLoad().catch(e => {
       console.error(e)
       process.exit(1)
@@ -59,11 +65,11 @@ class ReportReader extends Readable {
 
   load (id: string): Promise<ReportType[]> {
     return new Promise((resolve, reject) => {
-      const st = fetch(`${api}&till_member_guid=${id}`, {
+      const st = fetch(`${this.api.endpoint}&till_member_guid=${id}`, {
         headers: {
           'x-requested-with': 'XMLHttpRequest',
           'Accept': 'application/json',
-          'cookie': cookie
+          'cookie': this.api.cookie
         }
       })
       st.on('response', response => {
@@ -130,13 +136,41 @@ class ReportReader extends Readable {
 
 }
 
-function main () {
-  return new ReportReader()
+interface WeeklyOptions {
+  api: string;
+  cookie?: string;
+  reportQuery?: {
+    date: string;
+    subgroup_guid: string;
+    conn_guid?: string;
+  }
 }
 
-main().pipe(through(
-  function (chunk, enc, cb) {
-    console.log(chunk.toString())
-    cb(null, chunk)
+const loadWeeklyReports = (opts: WeeklyOptions) => {
+  const rd = new ReportReader({
+    endpoint: `${opts.api}?${qs.stringify(opts.reportQuery)}`,
+    cookie: opts.cookie
+  })
+  rd.pipe(through(
+    function (chunk, enc, cb) {
+      console.log(chunk.toString())
+      cb(null, chunk)
+    }
+  ))
+}
+
+function main () {
+  const opts: WeeklyOptions = {
+    api: 'https://tower.im/teams/66f9f25eee0a44d18282ffdcd0b33e1f/reports/',
+    cookie: 'wechat_login_remember_me=true; intercom-id-xbtsuf77=54e3394a-ee1d-40cb-bf4d-009e419f92a5; remember_token=80137323-603b-446e-b564-c11170cb4b75; remember_sns_bind_token=YZitBAdKvWiKMEmxrJSxPUUQ; remember_team_guid=66f9f25eee0a44d18282ffdcd0b33e1f; uid=rBACK2B/gd2s2GWdQeAhAg==; AGL_USER_ID=e5d3f4ba-1752-4ea1-8ae8-044550c6eb0b; _tower2_session=a5cfd52f7461b08ffa1ff4fd4073e383; intercom-session-xbtsuf77=UDVYcHZrOTNQRS9TZy8yTlF2VVo4NVdHNTljbFJPdDVZMlhZbU1VTW5rRGl4cEx4dFE5NE5sUElnOTZVdllTeS0tc2RvSlNPaktxWk0vODN2VEtQYjdYdz09--ec4bc96c3cad84a2d7e2ac0e0d3a1a06d0e21643',
+    reportQuery: {
+      date: '2021-09-20',
+      subgroup_guid: 'b6c3e3fc950e59ba68987dbe04492b12',
+      conn_guid: '4b463b73-d19a-432f-a1c7-7b2835504c6a',
+    }
   }
-))
+
+  loadWeeklyReports(opts)
+}
+
+main()
