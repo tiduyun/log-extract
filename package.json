@@ -4,7 +4,7 @@
   "description": "daily report generator (based on tower.im)",
   "main": "./dist/index.js",
   "scripts": {
-    "test": "rb --compress=false && node ./dist/index.js",
+    "test": "rb && node ./dist/index.js",
     "dev": "tsc -t es5 -m commonjs -p . -w",
     "build": "rb",
     "build-image": "npm run build && npm pack && docker buildx bake --push"

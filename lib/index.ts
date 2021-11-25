@@ -4,60 +4,63 @@
  * @author Allex Wang (@allex_wang)
  */
 
-import p from 'path'
+import { promisify } from 'util'
 import { through } from '@tdio/stream'
 
-import { fetch, runSeries } from './utils'
-import { Printer, cos } from './printer'
+import { fetch, cos } from './utils'
+import { Printer } from './printer'
 import { sanitize, parse } from './processor'
 
 import { Kv, IProject, IConfig } from './types/common'
+import logger from './logger'
 
 interface IReport {
   title: string;
   list: string[];
 }
 
-/* @sington global configs, parsed by `-c config.json` */
-let CONFIG: IConfig
-let orders: Kv<number> = {}
-
-const compareOrder = (a: IReport, b: IReport) => {
-  const diff = orders[a.title] - orders[b.title]
-  return diff > 0 ? 1 : diff === 0 ? 0 : -1
+interface ReportContext {
+  api?: string;
+  title: string;
+  cookie: string;
+  labels: Array<[string, string[]]>;
+  startTime: Date;
+  orderBy (a: IReport, b: IReport): -1 | 0 | 1;
 }
 
-const identifyDept = (title: string): string => {
-  const depts = CONFIG.departmentNames
-  for (let l = depts.length, i = -1; ++i < l;) {
-    const lexicon = depts[i][1] as string[]
-    if (lexicon.some(word => title.indexOf(word) !== -1)) {
-      return depts[i][0]
-    }
+const identifyLabel = (title: string, labels: any[]): string => {
+  for (let l = labels.length, i = -1; ++i < l;) {
+      const lexicon: string[] = labels[i][1]
+      if (lexicon.some(word => title.indexOf(word) !== -1)) {
+          return labels[i][0];
+      }
   }
   return title
 }
 
-const getLastMiddleNight = (): Date => {
-  const dt = new Date()
-  dt.setDate(dt.getDate() - 1)
-  dt.setHours(23)
-  dt.setMinutes(59)
-  return dt
+type ParsedReportData = {
+  title: string;
+  list: string[];
+  attrs: Kv<any>
 }
 
-const render = (spec: { title: string; limit: Date; }) => {
+const render = (ctx: ReportContext) => {
+  logger.log(`build reports of "${ctx.title}" ...`)
+
   return through(function (reports, enc, cb) {
-    const content = reports
-      .filter(o => new Date(o.attrs['createTime']) > spec.limit)
+    const list = reports.filter(o => new Date(o.attrs['createTime']) > ctx.startTime)
+
+    logger.log(`parsed reports: \n${JSON.stringify(list, null, 2)}`)
+
+    const content = list
       .map(({ markdown, attrs }) => {
         const groupOffset = []
-        const spec = markdown.trim().split('\n')
+        const report: ParsedReportData = markdown.trim().split('\n')
           .filter(Boolean)
-          .reduce((spec, line, i) => {
+          .reduce((spec: ParsedReportData, line: string, i: number) => {
             if (i === 0 && !/\d\./.test(line)) {
               // cleanup
-              spec.title = identifyDept(line)
+              spec.title = identifyLabel(line, ctx.labels)
             } else {
               if (line.indexOf('#') === 0) {
                 groupOffset.push(i)
@@ -69,58 +72,74 @@ const render = (spec: { title: string; limit: Date; }) => {
 
         // remove single group title
         if (groupOffset.length === 1) {
-          spec.list.splice(groupOffset[groupOffset[0]], 1)
+          report.list.splice(groupOffset[groupOffset[0]], 1)
         }
 
-        return spec
+        return report
       })
-      .sort(compareOrder)
+      .sort(ctx.orderBy)
       .map(o => `### ${o.title}\n${o.list.join('\n')}`)
       .join('\n\n')
 
-    cb(null, content ? `## ${spec.title}\n\n${content}` : '')
+    cb(null, content ? `## ${ctx.title}\n\n${content}` : '')
   }, { writableObjectMode: true })
 }
 
-const genReports = (project: IProject) =>
-  fetch(project.api, { headers: { 'Accept': '*/*', 'cookie': CONFIG.cookie } })
+const genReports = ({ api, ...ctx }: ReportContext) => {
+  return fetch(api, { headers: { 'Accept': '*/*', 'cookie': ctx.cookie } })
     .pipe(sanitize())
     .pipe(parse())
-    .pipe(render({ title: project.title, limit: getLastMiddleNight() }))
+    .pipe(render(ctx))
+}
 
-function main (config: IConfig) {
-  CONFIG = config
-  orders = CONFIG.departmentNames.reduce((map, cfg, i: number) => {
+const getMiddleNight = (n: number): Date => {
+  const dt = new Date()
+  dt.setDate(dt.getDate() + n)
+  dt.setHours(23)
+  dt.setMinutes(59)
+  dt.setSeconds(59)
+  return dt
+}
+
+async function main(config: IConfig): Promise<void> {
+  const orderIndexes = config.departmentNames.reduce((map, cfg, i) => {
     map[cfg[0]] = i
     return map
   }, {} as Kv<number>)
 
-  const date = new Date().toISOString().split('T')[0] // yyyy-MM-dd
+  const orderBy: ReportContext["orderBy"] = (a, b) => {
+    const diff = orderIndexes[a.title] - orderIndexes[b.title]
+    return diff > 0 ? 1 : diff === 0 ? 0 : -1
+  }
 
-  const out = new Printer({ fd: process.stdout })
-  out.write(`Start to build daily reports (${date})...\n\n`)
+  const isodt = new Date().toISOString()
+  const date = isodt.split('T')[0] // yyyy-MM-dd
 
-  const projects = CONFIG.projects
-  runSeries(
-    Object.keys(projects).map(pid => cos(genReports(projects[pid]))),
-    (err: Error, results: any) => {
-      if (!err) {
-        results = results.filter(r => r.length)
-        const l = results.length
-        if (l > 0) {
-          out.write(`# 研发日报【${date}】\n\n`)
-          results.forEach((r, i) => {
-            out.write(r)
-            if (i < l - 1) out.write('\n\n---\n\n')
-          })
-          out.write('\n\n')
-        } else {
-          out.write('No available reports yet!\n')
-          process.exit(1)
-        }
+  logger.log(`Start to build daily reports (${isodt})...`)
+
+  const projects = config.projects
+  let out = new Printer({ fd: process.stdout })
+  let hasTitle = false
+
+  for (const pid of Object.keys(config.projects)) {
+    const r = await promisify(
+      cos(() => genReports({
+        ...projects[pid],
+        cookie: config.cookie,
+        labels: config.departmentNames,
+        startTime: getMiddleNight(-1),
+        orderBy: orderBy
+      }))
+    )()
+    if (r.length) {
+      if (!hasTitle) {
+        out.write(`# 研发日报【${date}】\n\n`)
+        hasTitle = true
       }
+      out.write(r)
+      out.write('\n\n---\n')
     }
-  )
+  }
 }
 
 module.exports = main

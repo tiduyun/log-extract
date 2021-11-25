@@ -4,6 +4,11 @@ export interface Kv<T = any> {
 
 export type GenericCallback = <T> (error?: Error | null, data?: T) => void;
 
+export interface TransformStream<I = any, O = any> {
+  readonly readable: ReadableStream<O>;
+  readonly writable: WritableStream<I>;
+}
+
 export interface IProject {
   title: string;
   api: string;

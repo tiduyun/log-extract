@@ -5,7 +5,6 @@
  */
 
 import { Stream, Transform, TransformCallback, TransformOptions, Writable } from 'stream'
-import { WriteStream } from 'fs'
 
 export interface PrinterOptions extends TransformOptions {
   fd?: Writable
@@ -30,27 +29,5 @@ export class Printer extends Transform {
   }
   output (): Buffer {
     return this.sb
-  }
-}
-
-/**
- * concat stream and returns as callback spec
- */
-export const cos = (stream: Stream) => {
-  const p = new Printer({ objectMode: true })
-  stream.pipe(p)
-  let finished = false
-  stream.on('end', () => {
-    finished = true
-  })
-  return (cb: TransformCallback) => {
-    const f = () => {
-      cb(null, p.output())
-    }
-    if (finished) {
-      f()
-    } else {
-      stream.on('end', f)
-    }
   }
 }

@@ -7,9 +7,11 @@
 import p from 'path'
 import fs from 'fs'
 import request from 'request'
-import { Transform } from 'stream'
+import { Readable, Writable } from 'stream'
 import { GenericCallback, Kv } from 'types/common'
 import JSON5 from 'json5'
+
+import { Printer } from './printer'
 
 type CallbackTask = (cb: GenericCallback) => void
 
@@ -70,3 +72,23 @@ export const loadConfig = <T> (file: string = 'config.json'): T => {
 }
 
 export const parseJSON = (s: string) => JSON5.parse(s)
+
+export const cos = (readerGenerator: () => Readable, opts: { fd?: Writable } = {}) => {
+  return (cb: (e: Error | null, data: any) => void) => {
+    const rd = readerGenerator()
+    const p = new Printer({ objectMode: true, fd: opts.fd })
+    let finished = false
+    rd.on('end', () => {
+      finished = true
+    }).pipe(p)
+    const f = () => {
+      cb(null, p.output())
+    };
+    if (finished) {
+      f()
+    }
+    else {
+      rd.on('end', f)
+    }
+  }
+}

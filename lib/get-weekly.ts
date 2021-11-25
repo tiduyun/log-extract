@@ -1,8 +1,7 @@
 import { Readable, ReadableOptions } from 'stream'
 import cheerio from 'cheerio'
 import { through } from '@tdio/stream'
-import { fetch, runSeries, loadConfig, parseJSON } from './utils'
-import { cos } from './printer'
+import { fetch, runSeries, loadConfig, parseJSON, cos } from './utils'
 import * as qs from 'querystring'
 
 interface ReportType {
@@ -78,7 +77,7 @@ class ReportReader extends Readable {
           reject(new ReportError('None contents', code))
         }
       })
-      cos(st)((err, result) => {
+      cos(() => st)((err, result) => {
         if (err) {
           reject(err)
         } else {

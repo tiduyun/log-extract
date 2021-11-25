@@ -5,6 +5,8 @@ import { parseJSON } from './utils'
 
 import { cleanupMarkdown } from './markdown-utils'
 
+import logger from './logger'
+
 export const sanitize = () => {
   let head: Buffer | null = null
   let matching = false
@@ -19,9 +21,11 @@ export const sanitize = () => {
     return -1
   }
 
-  return through(
+  const st = through(
     function (chunk, enc, cb) {
       if (finished) {
+        logger.log('[sanitize] ->> transform finished')
+        cb()
         return
       }
       if (!matching) {
@@ -52,6 +56,16 @@ export const sanitize = () => {
       }
     }
   )
+
+  st
+    .on('finish', () => {
+      logger.log('[sanitize] ->> writer finish')
+    })
+    .on('end', () => {
+      logger.log('[sanitize] ->> reader end')
+    })
+
+  return st
 }
 
 const turndownService = new TurndownService({ headingStyle: 'atx' })
